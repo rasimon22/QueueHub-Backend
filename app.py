@@ -13,10 +13,10 @@ states = {}
 def create_room(room):
     songs = []
     for x in range(10):
-        songs.append(str(Song(title="Sweet Child O' Mine", album="Appetite For Destruction",
+        songs.append(str(Song(title="Homecoming", album="Graduation",
                           uri="a url", user="rasimon")))
     states[room] = RoomState(room_code=room, queue=songs,
-                             playback_status="playing", members='rasimon')
+                             playback_status="playing", members=['rasimon'])
     states[room].add_song(Song(title="Aint No Rest for the Wicked", album="Album_",
                           uri="another_url", user="rasimon"))
     return json.dumps(str(states[room]))
@@ -28,8 +28,10 @@ def add(room):
     return json.dumps(str(states[room]))
 
 
-@app.route("/join/<room>")
-def join_room(room):
+@app.route("/join/<room>/<user>")
+def join_room(room, user):
+    if user not in states[room].state['members']:
+        states[room].state['members'].append(user)
     return str(states[room])
 
 
