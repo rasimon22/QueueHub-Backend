@@ -1,4 +1,5 @@
 from flask import Flask
+from flask import request
 from models.Song import Song
 from models.State import RoomState
 import json
@@ -16,6 +17,14 @@ def create_room(room):
                           uri="a url", user="rasimon")))
     states[room] = RoomState(room_code=room, queue=songs,
                              playback_status="playing", members='rasimon')
+    states[room].add_song(Song(title="Aint No Rest for the Wicked", album="Album_",
+                          uri="another_url", user="rasimon"))
+    return json.dumps(str(states[room]))
+
+
+@app.route("/add/<room>", methods=['POST'])
+def add(room):
+    states[room].add_song(request.form['song'])
     return json.dumps(str(states[room]))
 
 
