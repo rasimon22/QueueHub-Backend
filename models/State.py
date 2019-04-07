@@ -14,7 +14,7 @@ class RoomState(object):
         return json.dumps(str(self.state))
 
     def add_song(self, song):
-        self.state['queue'].append(str(song))
+        self.state['queue'].append(song)
 
     def add_member(self, member):
         self.state['members'].append(member)

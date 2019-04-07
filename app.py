@@ -19,13 +19,13 @@ def create_room(room):
                              playback_status="playing", members=['rasimon'])
     states[room].add_song(Song(title="Aint No Rest for the Wicked", album="Album_",
                           uri="another_url", user="rasimon"))
-    return json.dumps(str(states[room]))
+    return str(states[room])
 
 
 @app.route("/add/<room>", methods=['POST'])
 def add(room):
     states[room].add_song(request.form['song'])
-    return json.dumps(str(states[room]))
+    return str(states[room])
 
 
 @app.route("/join/<room>/<user>")
