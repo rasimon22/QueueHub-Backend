@@ -1,12 +1,15 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask import request
 from models.Song import Song
 from models.State import RoomState
+from flask_sse import sse
 import json
 
 app = Flask(__name__)
 
 states = {}
+app.config["REDIS_URL"] = "redis://localhost"
+app.register_blueprint(sse, url_prefix='/stream')
 
 
 @app.route("/create/<room>")
@@ -24,7 +27,8 @@ def create_room(room):
 
 @app.route("/add/<room>", methods=['POST'])
 def add(room):
-    states[room].add_song(request.form['song'])
+    #states[room].add_song(request.form['song'])
+    sse.publish({"song":json.dumps(request.form['song'])}, type='song')
     return states[room].serialize()
 
 
@@ -34,10 +38,15 @@ def join_room(room, user):
         states[room].state['members'].append(user)
     return states[room].serialize()
 
+@app.route('/hello')
+def publish_hello():
+    sse.publish({"message": "Hello!"}, type='greeting')
+    return "Message sent!"
 
-@app.route("/")
-def hello():
-    return "Hello World"
 
+@app.route('/')
+def index():
+    return render_template("index.html")
 
-app.run(host="0.0.0.0", debug=True)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", debug=True)
