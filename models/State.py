@@ -10,8 +10,11 @@ class RoomState(object):
         self.state = kwargs
         self.state['current_song'] = self.state['queue'][0]
 
-    def __str__(self):
-        return json.dumps(str(self.state))
+    def serialize(self):
+        queue = [s.properties for s in self.state['queue']]
+        ret = {"queue":queue, "members":self.state['members'], "playback":self.state['playback_status']}
+
+        return json.dumps(ret)
 
     def add_song(self, song):
         self.state['queue'].append(song)
