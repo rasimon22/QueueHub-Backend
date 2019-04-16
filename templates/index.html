@@ -4,7 +4,9 @@
   <title>Flask-SSE Quickstart</title>
 </head>
 <body>
+
   <h1>Flask-SSE Quickstart</h1>
+  {{ url_for('sse.stream') }}
   <script>
     var source = new EventSource("{{ url_for('sse.stream') }}");
     source.addEventListener('song', function(event) {
