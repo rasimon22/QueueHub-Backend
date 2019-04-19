@@ -6,9 +6,9 @@
 <body>
 
   <h1>Flask-SSE Quickstart</h1>
-  {{ url_for('sse.stream') }}
+  {{ url_for('sse.stream', channel='100') }}
   <script>
-    var source = new EventSource("{{ url_for('sse.stream') }}");
+    var source = new EventSource("{{ url_for('sse.stream', channel='100') }}");
     source.addEventListener('song', function(event) {
         var data = JSON.parse(event.data);
         alert("The server says " + data.message);

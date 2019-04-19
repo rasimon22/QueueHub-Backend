@@ -1,5 +1,5 @@
 from flask import Flask, render_template
-from flask import request
+from flask import request, make_response
 from models.Song import Song
 from models.State import RoomState
 from flask_sse import sse
@@ -30,15 +30,31 @@ def add(room):
 
 @app.route("/next/<room>")
 def next(room):
-    sse.publish("next", type='next')
+    sse.publish("next", type='next', channel=str(room))
     states[room].next_song()
     return "next"
 
 @app.route("/join/<room>/<user>")
 def join_room(room, user):
+    if room not in states.keys():
+        return make_response("not found", 400)
     if user not in states[room].state['members']:
         states[room].state['members'].append(user)
     return states[room].serialize()
+
+@app.route("/pause/<room>")
+def pause(room):
+    if states[room].state['playback_status'] == 'playing':
+        states[room].state['playback_status'] = 'paused'
+        sse.publish("pause", type='playback', channel=str(room))
+    return "pause"
+
+@app.route("/play/<room>")
+def play(room):
+    if states[room].state['playback_status'] == 'paused':
+        states[room].state['playback_status'] = 'playing'
+        sse.publish("playing", type='playback', channel=str(room))
+    return "play"
 
 @app.route('/hello')
 def publish_hello():
