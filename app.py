@@ -3,7 +3,6 @@ from flask import request, make_response
 from models.Song import Song
 from models.State import RoomState
 from flask_sse import sse
-from flask_cors import CORS
 import json
 
 app = Flask(__name__)
@@ -19,6 +18,7 @@ def create_room(room):
     songs = []
     states[room] = RoomState(room_code=room, queue=songs,
                              playback_status="playing", members=['rasimon'])
+
     return states[room].serialize()
 
 
