@@ -2,10 +2,12 @@ from flask import Flask, render_template
 from flask import request, make_response
 from models.Song import Song
 from models.State import RoomState
+from flask_cors import CORS
 from flask_sse import sse
 import json
 
 app = Flask(__name__)
+CORS(app)
 app.config.from_pyfile('config.py')
 
 states = {}
@@ -59,12 +61,6 @@ def play(room):
         states[room].state['playback_status'] = 'playing'
         sse.publish("playing", type='playback', channel=str(room))
     return "play"
-
-
-@app.route('/hello')
-def publish_hello():
-    sse.publish({"message": "Hello!"}, type='greeting')
-    return "Message sent!"
 
 
 @app.route('/')
