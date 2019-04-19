@@ -1,21 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Flask-SSE Quickstart</title>
+    <title>Flask-SSE Quickstart</title>
 </head>
 <body>
 
-  <h1>Flask-SSE Quickstart</h1>
-  {{ url_for('sse.stream', channel='100') }}
-  <script>
+<h1>Flask-SSE Quickstart</h1>
+{{ url_for('sse.stream', channel='100') }}
+<script>
     var source = new EventSource("{{ url_for('sse.stream', channel='100') }}");
-    source.addEventListener('song', function(event) {
+    source.addEventListener('song', function (event) {
         var data = JSON.parse(event.data);
-        alert("The server says " + data.message);
+        alert("Channel 100");
     }, false);
-    source.addEventListener('error', function(event) {
+    source.addEventListener('error', function (event) {
         alert("Failed to connect to event stream. Is Redis running?");
     }, false);
-  </script>
+</script>
+<script>
+    var source = new EventSource("{{ url_for('sse.stream', channel='200') }}");
+    source.addEventListener('song', function (event) {
+        var data = JSON.parse(event.data);
+        alert("Channel 200");
+    }, false);
+    source.addEventListener('error', function (event) {
+        alert("Failed to connect to event stream. Is Redis running?");
+    }, false);
+</script>
 </body>
 </html>

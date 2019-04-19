@@ -7,7 +7,7 @@ from flask_cors import CORS
 import json
 
 app = Flask(__name__)
-CORS(app)
+app.config.from_pyfile('config.py')
 
 states = {}
 app.config["REDIS_URL"] = "redis://localhost"
@@ -25,14 +25,16 @@ def create_room(room):
 @app.route("/add/<room>", methods=['POST'])
 def add(room):
     states[room].add_song(request.get_json(force=True))
-    sse.publish({"song":request.get_json(force=True)}, type='song')
+    sse.publish({"song": request.get_json(force=True)}, type='song', channel=str(room))
     return states[room].serialize()
+
 
 @app.route("/next/<room>")
 def next(room):
     sse.publish("next", type='next', channel=str(room))
     states[room].next_song()
     return "next"
+
 
 @app.route("/join/<room>/<user>")
 def join_room(room, user):
@@ -42,6 +44,7 @@ def join_room(room, user):
         states[room].state['members'].append(user)
     return states[room].serialize()
 
+
 @app.route("/pause/<room>")
 def pause(room):
     if states[room].state['playback_status'] == 'playing':
@@ -49,12 +52,14 @@ def pause(room):
         sse.publish("pause", type='playback', channel=str(room))
     return "pause"
 
+
 @app.route("/play/<room>")
 def play(room):
     if states[room].state['playback_status'] == 'paused':
         states[room].state['playback_status'] = 'playing'
         sse.publish("playing", type='playback', channel=str(room))
     return "play"
+
 
 @app.route('/hello')
 def publish_hello():
@@ -66,5 +71,7 @@ def publish_hello():
 def index():
     return render_template("index.html")
 
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=True)
+    app.run()
+
