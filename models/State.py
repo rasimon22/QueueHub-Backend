@@ -3,17 +3,15 @@ import json
 
 class RoomState(object):
     def __init__(self, **kwargs):
-        # self.queue = kwargs['queue']
-        # self.members = kwargs['members']
-        # kself.playback_status = kwargs['playback_status']
-        # self.room_code = kwargs['room_code']
+
         self.state = kwargs
         self.state['current_song'] = ''
         if len(self.state['queue']) > 0:
             self.state['current_song'] = self.state['queue'][0]
 
     def serialize(self):
-        ret = {"queue":self.state['queue'], "current_song": self.state['current_song'],"members":self.state['members'], "playback":self.state['playback_status']}
+        ret = {"queue": self.state['queue'], "current_song": self.state['current_song'],
+               "members": self.state['members'], "playback": self.state['playback_status']}
 
         return json.dumps(ret)
 
@@ -30,4 +28,14 @@ class RoomState(object):
             self.state['current_song'] = self.state['queue'].pop(0)
             return self.state['current_song']
         return self.state['current_song']
+
+    def bump_song(self, song_id):
+        for idx, s in enumerate(self.state['queue']):
+            song = json.loads(s)
+            if song_id == song['id']:
+                song['bumps'] += 1
+                s = json.dumps(song)
+                if song['bumps'] > json.dumps(self.state['queue'][idx - 1])['bumps']:
+                    self.state['queue'][idx - 1], s = s, self.state['queue'][idx - 1]
+        return self.state['queue']
 

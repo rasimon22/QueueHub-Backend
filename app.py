@@ -63,6 +63,13 @@ def play(room):
     return "play"
 
 
+@app.route("/<room>/<user>/bump/<song_id>")
+def bump(room, song_id):
+    states[room].bump_song(song_id)
+    sse.publish(song_id, type='bump', channel=str(room))
+    return song_id
+
+
 @app.route('/')
 def index():
     return render_template("index.html")
