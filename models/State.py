@@ -33,7 +33,7 @@ class RoomState(object):
         for idx, song in enumerate(self.state['queue']):
             if song_id == song['id']:
                 song['bumps'] += 1
-                if len(self.state['queue']) > 1 and song['bumps'] > json.dumps(self.state['queue'][idx - 1])['bumps']:
+                if len(self.state['queue']) > 1 and song['bumps'] > self.state['queue'][idx - 1]['bumps']:
                     self.state['queue'][idx - 1], song = song, self.state['queue'][idx - 1]
         return self.state['queue']
 
