@@ -34,6 +34,8 @@ class RoomState(object):
             if song_id == song['id']:
                 song['bumps'] += 1
                 if len(self.state['queue']) > 1 and song['bumps'] > self.state['queue'][idx - 1]['bumps']:
-                    self.state['queue'][idx - 1], song = song, self.state['queue'][idx - 1]
+                    self.state['queue'][idx], self.state['queue'][idx - 1] = self.state['queue'][idx - 1],\
+                                                                             self.state['queue'][idx]
+
         return self.state['queue']
 
