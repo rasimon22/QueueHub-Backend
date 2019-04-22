@@ -35,7 +35,7 @@ class RoomState(object):
             if song_id == song['id']:
                 song['bumps'] += 1
                 s = json.dumps(song)
-                if song['bumps'] > json.dumps(self.state['queue'][idx - 1])['bumps']:
+                if len(self.state['queue']) > 1 and song['bumps'] > json.dumps(self.state['queue'][idx - 1])['bumps']:
                     self.state['queue'][idx - 1], s = s, self.state['queue'][idx - 1]
         return self.state['queue']
 
