@@ -33,9 +33,9 @@ class RoomState(object):
         for idx, song in enumerate(self.state['queue']):
             if song_id == song['id']:
                 song['bumps'] += 1
-                if len(self.state['queue']) > 1 and song['bumps'] > self.state['queue'][idx - 1]['bumps']:
-                    self.state['queue'][idx], self.state['queue'][idx - 1] = self.state['queue'][idx - 1],\
-                                                                             self.state['queue'][idx]
+                if not all(self.state['queue'][i]['bumps'] >= self.state['queue'][i + 1]['bumps']
+                           for i in range(len(self.state['queue']) - 1)):
+                    self.state['queue'].sort(key=lambda x: x['bumps'], reverse=True)
 
         return self.state['queue']
 
