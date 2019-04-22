@@ -64,7 +64,7 @@ def play(room):
 
 
 @app.route("/<room>/<user>/bump/<song_id>")
-def bump(room, song_id):
+def bump(room, user, song_id):
     states[room].bump_song(song_id)
     sse.publish(song_id, type='bump', channel=str(room))
     return song_id
