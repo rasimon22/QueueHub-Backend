@@ -30,12 +30,10 @@ class RoomState(object):
         return self.state['current_song']
 
     def bump_song(self, song_id):
-        for idx, s in enumerate(self.state['queue']):
-            song = json.loads(s)
+        for idx, song in enumerate(self.state['queue']):
             if song_id == song['id']:
                 song['bumps'] += 1
-                s = json.dumps(song)
                 if len(self.state['queue']) > 1 and song['bumps'] > json.dumps(self.state['queue'][idx - 1])['bumps']:
-                    self.state['queue'][idx - 1], s = s, self.state['queue'][idx - 1]
+                    self.state['queue'][idx - 1], song = song, self.state['queue'][idx - 1]
         return self.state['queue']
 
