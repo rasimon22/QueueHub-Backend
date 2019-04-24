@@ -10,7 +10,6 @@ import json
 
 
 state_lock = Lock()
-
 app = Flask(__name__)
 CORS(app)
 app.config.from_pyfile('config.py')
@@ -37,6 +36,7 @@ def create_room(room):
 def add(room):
     if room not in states.keys():
         return make_response("not found", 400)
+    sse.publish({"song": request.get_json(force=True)}, type='song', channel=str(room))
     state_lock.acquire()
     try:
         for song in states[room].state['queue']:
@@ -46,7 +46,6 @@ def add(room):
         states[room].add_song(request.get_json(force=True))
     finally:
         state_lock.release()
-    sse.publish({"song": request.get_json(force=True)}, type='song', channel=str(room))
     return states[room].serialize()
 
 
@@ -67,13 +66,13 @@ def next(room):
 def join_room(room, user):
     if room not in states.keys():
         return make_response("not found", 400)
+    sse.publish({"user": user}, type="join", channel=str(room))
     state_lock.acquire()
     try:
         if user not in states[room].state['members']:
             states[room].state['members'].append(user)
     finally:
         state_lock.release()
-    sse.publish({"user": user}, type="join", channel=str(room))
     return states[room].serialize()
 
 
@@ -122,10 +121,11 @@ def skip(room):
 def bump(room, user, song_id):
     if room not in states.keys():
         return make_response("not found", 400)
+
+    sse.publish(song_id, type='bump', channel=str(room))
     state_lock.acquire()
     try:
         states[room].bump_song(song_id)
-        sse.publish(song_id, type='bump', channel=str(room))
     finally:
         state_lock.release()
     return song_id
