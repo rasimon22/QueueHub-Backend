@@ -36,8 +36,8 @@ def create_room(room):
 def add(room):
     if room not in states.keys():
         return make_response("not found", 400)
-    sse.publish({"song": request.get_json(force=True)}, type='song', channel=str(room))
     state_lock.acquire()
+    sse.publish({"song": request.get_json(force=True)}, type='song', channel=str(room))
     try:
         for song in states[room].state['queue']:
             if song['id'] == request.get_json(force=True)['id']:
