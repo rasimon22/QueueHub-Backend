@@ -4,6 +4,8 @@ from models.Song import Song
 from models.State import RoomState
 from flask_cors import CORS
 from flask_sse import sse
+from multiprocessing import Lock
+import datetime
 import json
 
 app = Flask(__name__)
@@ -14,13 +16,17 @@ states = {}
 app.config["REDIS_URL"] = "redis://localhost"
 app.register_blueprint(sse, url_prefix='/stream')
 
+state_lock = Lock()
 
 @app.route("/create/<room>")
 def create_room(room):
-    songs = []
-    states[room] = RoomState(room_code=room, queue=songs,
-                             playback_status="playing", members=['rasimon'],
-                             skip_count=0)
+    state_lock.acquire()
+    try:
+        states[room] = RoomState(room_code=room, queue=[],
+                                 playback_status="playing", members=['rasimon'],
+                                 skip_count=0)
+    finally:
+        state_lock.release()
 
     return states[room].serialize()
 
@@ -29,11 +35,15 @@ def create_room(room):
 def add(room):
     if room not in states.keys():
         return make_response("not found", 400)
-    for song in states[room].state['queue']:
-        if song['id'] == request.get_json(force=True)['id']:
-            return make_response("duplicate", 400)
+    state_lock.acquire()
+    try:
+        for song in states[room].state['queue']:
+            if song['id'] == request.get_json(force=True)['id']:
+                return make_response("duplicate", 400)
 
-    states[room].add_song(request.get_json(force=True))
+        states[room].add_song(request.get_json(force=True))
+    finally:
+        state_lock.release()
     sse.publish({"song": request.get_json(force=True)}, type='song', channel=str(room))
     return states[room].serialize()
 
@@ -43,7 +53,11 @@ def next(room):
     if room not in states.keys():
         return make_response("not found", 400)
     sse.publish("next", type='next', channel=str(room))
-    states[room].next_song()
+    state_lock.acquire()
+    try:
+        states[room].next_song()
+    finally:
+        state_lock.release()
     return "next"
 
 
@@ -51,8 +65,12 @@ def next(room):
 def join_room(room, user):
     if room not in states.keys():
         return make_response("not found", 400)
-    if user not in states[room].state['members']:
-        states[room].state['members'].append(user)
+    state_lock.acquire()
+    try:
+        if user not in states[room].state['members']:
+            states[room].state['members'].append(user)
+    finally:
+        state_lock.release()
     sse.publish({"user": user}, type="join", channel=str(room))
     return states[room].serialize()
 
@@ -61,9 +79,13 @@ def join_room(room, user):
 def pause(room):
     if room not in states.keys():
         return make_response("not found", 400)
-    if states[room].state['playback_status'] == 'playing':
-        states[room].state['playback_status'] = 'paused'
-        sse.publish("pause", type='playback', channel=str(room))
+    state_lock.acquire()
+    try:
+        if states[room].state['playback_status'] == 'playing':
+            states[room].state['playback_status'] = 'paused'
+            sse.publish("pause", type='playback', channel=str(room))
+    finally:
+        state_lock.release()
     return "pause"
 
 
@@ -71,9 +93,13 @@ def pause(room):
 def play(room):
     if room not in states.keys():
         return make_response("not found", 400)
-    if states[room].state['playback_status'] == 'paused':
-        states[room].state['playback_status'] = 'playing'
-        sse.publish("playing", type='playback', channel=str(room))
+    state_lock.acquire()
+    try:
+        if states[room].state['playback_status'] == 'paused':
+            states[room].state['playback_status'] = 'playing'
+            sse.publish("playing", type='playback', channel=str(room))
+    finally:
+        state_lock.release()
     return "play"
 
 
@@ -81,8 +107,12 @@ def play(room):
 def skip(room):
     if room not in states.keys():
         return make_response("not found", 400)
-    states[room].state['skip_count'] += 1
-    sse.publish(states[room].state['skip_count'], type="skip", channel=str(room))
+    state_lock.acquire()
+    try:
+        states[room].state['skip_count'] += 1
+        sse.publish(states[room].state['skip_count'], type="skip", channel=str(room))
+    finally:
+        state_lock.release()
     return str(states[room].state['skip_count'])
 
 
@@ -90,8 +120,12 @@ def skip(room):
 def bump(room, user, song_id):
     if room not in states.keys():
         return make_response("not found", 400)
-    states[room].bump_song(song_id)
-    sse.publish(song_id, type='bump', channel=str(room))
+    state_lock.acquire()
+    try:
+        states[room].bump_song(song_id)
+        sse.publish(song_id, type='bump', channel=str(room))
+    finally:
+        state_lock.release()
     return song_id
 
 
