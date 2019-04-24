@@ -9,7 +9,6 @@ import datetime
 import json
 
 
-state_lock = Lock()
 app = Flask(__name__)
 CORS(app)
 app.config.from_pyfile('config.py')
@@ -21,13 +20,9 @@ app.register_blueprint(sse, url_prefix='/stream')
 
 @app.route("/create/<room>")
 def create_room(room):
-    state_lock.acquire()
-    try:
-        states[room] = RoomState(room_code=room, queue=[],
+    states[room] = RoomState(room_code=room, queue=[],
                                  playback_status="playing", members=['rasimon'],
                                  skip_count=0)
-    finally:
-        state_lock.release()
 
     return states[room].serialize()
 
@@ -36,16 +31,12 @@ def create_room(room):
 def add(room):
     if room not in states.keys():
         return make_response("not found", 400)
-    state_lock.acquire()
-    sse.publish({"song": request.get_json(force=True)}, type='song', channel=str(room))
-    try:
-        for song in states[room].state['queue']:
-            if song['id'] == request.get_json(force=True)['id']:
-                return make_response("duplicate", 400)
+    for song in states[room].state['queue']:
+        if song['id'] == request.get_json(force=True)['id']:
+            return make_response("duplicate", 400)
 
         states[room].add_song(request.get_json(force=True))
-    finally:
-        state_lock.release()
+        sse.publish({"song": request.get_json(force=True)}, type='song', channel=str(room))
     return states[room].serialize()
 
 
@@ -54,11 +45,7 @@ def next(room):
     if room not in states.keys():
         return make_response("not found", 400)
     sse.publish("next", type='next', channel=str(room))
-    state_lock.acquire()
-    try:
-        states[room].next_song()
-    finally:
-        state_lock.release()
+    states[room].next_song()
     return "next"
 
 
@@ -66,13 +53,9 @@ def next(room):
 def join_room(room, user):
     if room not in states.keys():
         return make_response("not found", 400)
-    sse.publish({"user": user}, type="join", channel=str(room))
-    state_lock.acquire()
-    try:
-        if user not in states[room].state['members']:
-            states[room].state['members'].append(user)
-    finally:
-        state_lock.release()
+    if user not in states[room].state['members']:
+        states[room].state['members'].append(user)
+        sse.publish({"user": user}, type="join", channel=str(room))
     return states[room].serialize()
 
 
@@ -80,13 +63,9 @@ def join_room(room, user):
 def pause(room):
     if room not in states.keys():
         return make_response("not found", 400)
-    state_lock.acquire()
-    try:
-        if states[room].state['playback_status'] == 'playing':
-            states[room].state['playback_status'] = 'paused'
-            sse.publish("pause", type='playback', channel=str(room))
-    finally:
-        state_lock.release()
+    if states[room].state['playback_status'] == 'playing':
+        states[room].state['playback_status'] = 'paused'
+        sse.publish("pause", type='playback', channel=str(room))
     return "pause"
 
 
@@ -94,13 +73,9 @@ def pause(room):
 def play(room):
     if room not in states.keys():
         return make_response("not found", 400)
-    state_lock.acquire()
-    try:
-        if states[room].state['playback_status'] == 'paused':
-            states[room].state['playback_status'] = 'playing'
-            sse.publish("playing", type='playback', channel=str(room))
-    finally:
-        state_lock.release()
+    if states[room].state['playback_status'] == 'paused':
+        states[room].state['playback_status'] = 'playing'
+        sse.publish("playing", type='playback', channel=str(room))
     return "play"
 
 
@@ -108,12 +83,8 @@ def play(room):
 def skip(room):
     if room not in states.keys():
         return make_response("not found", 400)
-    state_lock.acquire()
-    try:
-        states[room].state['skip_count'] += 1
-        sse.publish(states[room].state['skip_count'], type="skip", channel=str(room))
-    finally:
-        state_lock.release()
+    states[room].state['skip_count'] += 1
+    sse.publish(states[room].state['skip_count'], type="skip", channel=str(room))
     return str(states[room].state['skip_count'])
 
 
@@ -123,11 +94,7 @@ def bump(room, user, song_id):
         return make_response("not found", 400)
 
     sse.publish(song_id, type='bump', channel=str(room))
-    state_lock.acquire()
-    try:
-        states[room].bump_song(song_id)
-    finally:
-        state_lock.release()
+    states[room].bump_song(song_id)
     return song_id
 
 
