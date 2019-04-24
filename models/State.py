@@ -11,7 +11,8 @@ class RoomState(object):
 
     def serialize(self):
         ret = {"queue": self.state['queue'], "current_song": self.state['current_song'],
-               "members": self.state['members'], "playback": self.state['playback_status']}
+               "members": self.state['members'], "playback": self.state['playback_status'], "skip_count":
+               self.state['skip_count']}
 
         return json.dumps(ret)
 
@@ -26,6 +27,7 @@ class RoomState(object):
     def next_song(self):
         if len(self.state['queue']) > 0:
             self.state['current_song'] = self.state['queue'].pop(0)
+            self.state['skip_count'] = 0
             return self.state['current_song']
         return self.state['current_song']
 
