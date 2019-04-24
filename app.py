@@ -8,6 +8,9 @@ from multiprocessing import Lock
 import datetime
 import json
 
+
+state_lock = Lock()
+
 app = Flask(__name__)
 CORS(app)
 app.config.from_pyfile('config.py')
@@ -16,7 +19,6 @@ states = {}
 app.config["REDIS_URL"] = "redis://localhost"
 app.register_blueprint(sse, url_prefix='/stream')
 
-state_lock = Lock()
 
 @app.route("/create/<room>")
 def create_room(room):
