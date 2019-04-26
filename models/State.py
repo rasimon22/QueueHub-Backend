@@ -1,4 +1,6 @@
 import json
+import redis
+from redis import RedisError
 
 
 class RoomState(object):
@@ -9,12 +11,27 @@ class RoomState(object):
         if len(self.state['queue']) > 0:
             self.state['current_song'] = self.state['queue'][0]
 
-    def serialize(self):
-        ret = {"queue": self.state['queue'], "current_song": self.state['current_song'],
-               "members": self.state['members'], "playback": self.state['playback_status'], "skip_count":
-               self.state['skip_count']}
+    def store(self):
+        try:
+            r = redis.Redis(host="redis://127.0.0.1")
+            ret = {"name": self.state['name'], "queue": self.state['queue'], "current_song": self.state['current_song'],
+                   "members": self.state['members'], "playback": self.state['playback_status'], "skip_count":
+                       self.state['skip_count']}
+            r.set(self.state['name'], json.dumps(ret))
+            return json.dumps(ret)
+        except RedisError:
+            return False
 
-        return json.dumps(ret)
+    def load(self, name):
+        try:
+            r = redis.Redis(host="redis://127.0.0.1")
+            if r.exists(name):
+                self.state = r.get(name)
+                return True
+            else:
+                return False
+        except RedisError:
+            return False
 
     def add_song(self, song):
         self.state['queue'].append(song)
@@ -23,7 +40,7 @@ class RoomState(object):
 
     def add_member(self, member):
         self.state['members'].append(member)
-    
+
     def next_song(self):
         if len(self.state['queue']) > 0:
             self.state['current_song'] = self.state['queue'].pop(0)
@@ -40,4 +57,3 @@ class RoomState(object):
                     self.state['queue'].sort(key=lambda x: x['bumps'], reverse=True)
 
         return self.state['queue']
-
