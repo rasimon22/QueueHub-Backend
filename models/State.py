@@ -5,33 +5,32 @@ from redis import RedisError
 
 class RoomState(object):
     def __init__(self, **kwargs):
-
-        self.state = kwargs
-        self.state['current_song'] = ''
-        if len(self.state['queue']) > 0:
-            self.state['current_song'] = self.state['queue'][0]
+        if not "json" in kwargs.keys():
+            self.state=kwargs
+        else:
+            self.state=kwargs['json']
 
     def store(self):
         try:
-            r = redis.Redis(host="redis://127.0.0.1")
+            r = redis.Redis(host="localhost")
             ret = {"name": self.state['name'], "queue": self.state['queue'], "current_song": self.state['current_song'],
-                   "members": self.state['members'], "playback": self.state['playback_status'], "skip_count":
-                       self.state['skip_count']}
-            r.set(self.state['name'], json.dumps(ret))
+                   "members": self.state['members'], "playback_status": self.state['playback_status'], "skip_count": self.state['skip_count']}
+            r.delete(self.state['name'])
+            r.set(self.state['name'],json.dumps(ret))
             return json.dumps(ret)
         except RedisError:
             return False
 
-    def load(self, name):
+    @staticmethod
+    def load(name):
         try:
-            r = redis.Redis(host="redis://127.0.0.1")
+            r = redis.Redis(host="localhost")
             if r.exists(name):
-                self.state = r.get(name)
-                return True
+                return RoomState(json=json.loads(r.get(name).decode("utf-8")))
             else:
                 return False
-        except RedisError:
-            return False
+        except:
+            pass
 
     def add_song(self, song):
         self.state['queue'].append(song)
