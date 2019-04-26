@@ -10,6 +10,7 @@ CORS(app)
 app.config.from_pyfile('config.py')
 
 states = {}
+#this is a comment
 app.config["REDIS_URL"] = "redis://localhost"
 app.register_blueprint(sse, url_prefix='/stream')
 
